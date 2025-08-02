@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>AI Data Analyst</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+    };
+  </script>
+  <style>
+    ::-webkit-scrollbar {
+      width: 10px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #e0e0e0;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #888;
+      border-radius: 6px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #555;
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-white dark:from-gray-900 dark:to-gray-800 min-h-screen text-gray-800 dark:text-white transition duration-300" id="body">
+  <div class="max-w-6xl mx-auto px-6 py-10 space-y-8">
+    
+    <!-- Header -->
+    <div class="bg-white dark:bg-gray-900 p-6 rounded-xl shadow-xl flex items-center justify-between hover:shadow-2xl transition">
+      <div class="flex items-center space-x-4">
+        <img src="https://img.icons8.com/color/96/graph.png" alt="Data Icon" class="w-14 h-14">
+        <div>
+          <h1 class="text-4xl font-extrabold text-blue-700 dark:text-white tracking-tight">📊 AI Data Analyst</h1>
+          <p class="text-gray-500 dark:text-gray-300 mt-1">Upload datasets, ask questions, and get instant analysis & code.</p>
+        </div>
+      </div>
+      <!-- Dark Mode Toggle -->
+      <button onclick="toggleDark()" class="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white px-4 py-2 rounded-full shadow hover:scale-105 transition">
+        🌗 Toggle Theme
+      </button>
+    </div>
+
+    <!-- Error Message -->
+    {% if message %}
+      <div class="bg-red-100 border-l-4 border-red-500 text-red-800 p-4 rounded shadow" role="alert">
+        <strong class="font-bold">Error:</strong> {{ message }}
+      </div>
+    {% endif %}
+
+    <!-- Form Section -->
+    <form method="POST" enctype="multipart/form-data" class="bg-white dark:bg-gray-900 p-8 rounded-xl shadow-xl space-y-6 hover:shadow-2xl transition">
+      <div class="grid md:grid-cols-2 gap-6">
+        <!-- API Key -->
+        <div>
+          <label class="block font-semibold mb-1 text-gray-700 dark:text-white">🔐 API Key</label>
+          <input type="password" name="api_key" placeholder="Enter your OpenAI API key" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white" required />
+        </div>
+
+        <!-- File Upload -->
+        <div>
+          <label class="block font-semibold mb-1 text-gray-700 dark:text-white">📁 Upload Dataset</label>
+          <input type="file" name="file" accept=".csv,.xlsx" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white" required />
+        </div>
+      </div>
+
+      <!-- Sample Question Dropdown -->
+      <div>
+        <label class="block font-semibold mb-1 text-gray-700 dark:text-white">💡 Sample Questions</label>
+        <select onchange="document.getElementById('query').value = this.value" class="w-full p-3 border border-gray-300 rounded-lg dark:bg-gray-800 dark:text-white">
+          <option value="">Choose a query...</option>
+          <option>What are the column names?</option>
+          <option>Show summary statistics.</option>
+          <option>Plot histogram of glucose values.</option>
+          <option>Build logistic regression to predict Outcome.</option>
+        </select>
+      </div>
+
+      <!-- Query Box -->
+      <div>
+        <label class="block font-semibold mb-1 text-gray-700 dark:text-white">❓ Ask Your Question</label>
+        <textarea id="query" name="query" rows="4" placeholder="e.g. What is the average BMI by age group?" class="w-full p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white"></textarea>
+      </div>
+
+      <!-- Submit Button -->
+      <div class="flex justify-center">
+        <button type="submit" onclick="showSpinner()" class="bg-blue-700 hover:bg-blue-800 text-white py-3 px-6 rounded-lg font-bold text-lg flex items-center gap-3 transition">
+          <svg id="spinner" class="hidden animate-spin h-5 w-5 text-white" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+          </svg>
+          🚀 Analyze Data
+        </button>
+      </div>
+    </form>
+
+    <!-- Data Preview -->
+    {% if df_preview_html %}
+      <div class="bg-white dark:bg-gray-900 p-6 rounded-xl shadow-lg">
+        <h2 class="text-2xl font-bold text-blue-700 dark:text-white mb-4 border-b pb-2">👁 Preview: First 5 Rows</h2>
+        <div class="overflow-x-auto custom-scroll">
+          {{ df_preview_html | safe }}
+        </div>
+      </div>
+    {% endif %}
+
+    <!-- Tabs: Code & Result -->
+    {% if code_generated or result_html %}
+      <div class="bg-white dark:bg-gray-900 p-6 rounded-xl shadow-lg space-y-6">
+        <div class="flex space-x-4 border-b pb-2">
+          <button onclick="showTab('codeTab')" class="px-4 py-2 bg-blue-100 text-blue-700 font-semibold rounded hover:bg-blue-200 transition">🧠 Code</button>
+          <button onclick="showTab('resultTab')" class="px-4 py-2 bg-blue-100 text-blue-700 font-semibold rounded hover:bg-blue-200 transition">📊 Result</button>
+        </div>
+
+        <div id="codeTab" class="hidden">
+          <pre class="bg-gray-900 text-green-300 p-4 rounded overflow-x-auto"><code>{{ code_generated }}</code></pre>
+        </div>
+
+        <div id="resultTab" class="hidden">
+          <div class="overflow-x-auto">
+            {{ result_html | safe }}
+          </div>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+
+  <script>
+    function showSpinner() {
+      document.getElementById("spinner").classList.remove("hidden");
+    }
+
+    function toggleDark() {
+      document.getElementById("body").classList.toggle("dark");
+    }
+
+    function showTab(id) {
+      document.getElementById('codeTab').classList.add('hidden');
+      document.getElementById('resultTab').classList.add('hidden');
+      document.getElementById(id).classList.remove('hidden');
+    }
+  </script>
+</body>
+</html>
